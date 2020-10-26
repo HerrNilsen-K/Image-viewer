@@ -2,7 +2,11 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #define STB_IMAGE_IMPLEMENTATION
+#ifdef _WIN32
+#include <stb_image.h>
+#elif __linux__
 #include <stb/stb_image.h>
+#endif
 
 #include <fstream>
 
