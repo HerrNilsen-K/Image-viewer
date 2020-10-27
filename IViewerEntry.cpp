@@ -73,9 +73,9 @@ int main(int argc, char const **argv)
         std::cout << "----------------------\n";
     }
     glfwInit();
-    std::cout << "Width: "<< width << std::endl <<
-    "Height: " << height << std::endl << 
-    "Color Channels: " << nrChannels << std::endl;
+    std::cout << "Width: " << width << std::endl
+              << "Height: " << height << std::endl
+              << "Color Channels: " << nrChannels << std::endl;
     GLFWwindow *window = glfwCreateWindow(width, height, " ", NULL, NULL);
     glfwMakeContextCurrent(window);
     unsigned int err = glewInit();
@@ -189,6 +189,18 @@ int main(int argc, char const **argv)
         std::cout << "ERROR::SHADER::PROGRAM::LINKING\n"
                   << infoLog << std::endl;
     }
+
+    glfwSetFramebufferSizeCallback(window, [](GLFWwindow *win, int x, int y) {
+        GLCall(glViewport(0, 0, x, y));
+        GLCall(glDrawArrays(GL_TRIANGLES, 0, 6));
+        glfwSwapBuffers(win);
+    });
+
+    glfwSetKeyCallback(window, [](GLFWwindow *win, int key, int scancode, int action, int mods) {
+        if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
+            glfwSetWindowShouldClose(win, true);
+        glfwPollEvents();
+    });
 
     while (!glfwWindowShouldClose(window))
     {
