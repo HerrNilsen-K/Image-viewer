@@ -73,7 +73,9 @@ int main(int argc, char const **argv)
         std::cout << "----------------------\n";
     }
     glfwInit();
-    std::cout << width << " " << height << std::endl;
+    std::cout << "Width: "<< width << std::endl <<
+    "Height: " << height << std::endl << 
+    "Color Channels: " << nrChannels << std::endl;
     GLFWwindow *window = glfwCreateWindow(width, height, " ", NULL, NULL);
     glfwMakeContextCurrent(window);
     unsigned int err = glewInit();
@@ -115,8 +117,16 @@ int main(int argc, char const **argv)
     GLCall(glBindTexture(GL_TEXTURE_2D, imageTexture));
     GLCall(glPixelStorei(GL_UNPACK_ALIGNMENT, 1));
 
-    GLCall(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height,
-                        0, GL_RGB, GL_UNSIGNED_BYTE, imageData));
+    if (nrChannels == 3)
+    {
+        GLCall(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height,
+                            0, GL_RGB, GL_UNSIGNED_BYTE, imageData));
+    }
+    else if (nrChannels == 4)
+    {
+        GLCall(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height,
+                            0, GL_RGBA, GL_UNSIGNED_BYTE, imageData));
+    }
     GLCall(glGenerateMipmap(GL_TEXTURE_2D));
 
     stbi_image_free(imageData);
