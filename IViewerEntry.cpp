@@ -1,4 +1,5 @@
 #include <iostream>
+#include <string>
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #define STB_IMAGE_IMPLEMENTATION
@@ -42,18 +43,25 @@ bool filExists(const char *p_file)
 
 int main(int argc, char const **argv)
 {
-    if (argc != 2)
+    //Check if an image was passed to the program
+    try
     {
-        if (argc == 1)
+        if (argc != 2)
         {
-            std::cout << "Error: No input\n";
-            return EXIT_FAILURE;
+            if (argc == 1)
+            {
+                throw std::string("Error: No input\n");
+            }
+            else
+            {
+                throw std::string("Error: Too many inputs\n");
+            }
         }
-        else
-        {
-            std::cout << "Error: Too many inputs\n";
-            return EXIT_FAILURE;
-        }
+    }
+    catch (std::string e)
+    {
+        std::cout << e;
+        return EXIT_FAILURE;
     }
 
     if (!filExists(argv[1]))
@@ -62,6 +70,7 @@ int main(int argc, char const **argv)
         return EXIT_FAILURE;
     }
 
+    //Get image data and meta data
     int width, height, nrChannels;
     stbi_set_flip_vertically_on_load(1);
     unsigned char *imageData = stbi_load(argv[1], &width, &height, &nrChannels, 0);
@@ -95,12 +104,14 @@ int main(int argc, char const **argv)
         -1, -1, 0, 0, 0 //3
     };
 
+    //VBO
     unsigned int VBO;
     GLCall(glGenBuffers(1, &VBO));
 
     GLCall(glBindBuffer(GL_ARRAY_BUFFER, VBO));
     GLCall(glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW));
 
+    //VAO
     unsigned int VAO;
     GLCall(glGenVertexArrays(1, &VAO));
     GLCall(glBindVertexArray(VAO));
@@ -111,6 +122,7 @@ int main(int argc, char const **argv)
     GLCall(glVertexAttribPointer(1, 2, GL_FLOAT, 0, 5 * sizeof(float), (void *)(3 * sizeof(float))));
     GLCall(glEnableVertexAttribArray(1));
 
+    //Texture
     unsigned int imageTexture;
     GLCall(glGenTextures(1, &imageTexture));
 
@@ -153,6 +165,7 @@ int main(int argc, char const **argv)
         "    FragColor = texture(ourTexture, texCoord);\n"
         "} \n";
 
+    //Shader
     unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER), fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
     GLCall(glShaderSource(vertexShader, 1, &vertexShaderSource, NULL));
     GLCall(glCompileShader(vertexShader));
@@ -176,6 +189,7 @@ int main(int argc, char const **argv)
                   << infoLog << std::endl;
     }
 
+    //Shader program
     unsigned int shaderProgram;
     shaderProgram = glCreateProgram();
     GLCall(glAttachShader(shaderProgram, vertexShader));
@@ -190,24 +204,23 @@ int main(int argc, char const **argv)
                   << infoLog << std::endl;
     }
 
+    //Set the framebuffer callback, for drawing while resizing
     glfwSetFramebufferSizeCallback(window, [](GLFWwindow *win, int x, int y) {
         GLCall(glViewport(0, 0, x, y));
         GLCall(glDrawArrays(GL_TRIANGLES, 0, 6));
         glfwSwapBuffers(win);
     });
-
+    //Set the key callback, to process keyboard input
     glfwSetKeyCallback(window, [](GLFWwindow *win, int key, int scancode, int action, int mods) {
         if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
             glfwSetWindowShouldClose(win, true);
         glfwPollEvents();
     });
 
+    //Render loop
     while (!glfwWindowShouldClose(window))
     {
         glClear(GL_COLOR_BUFFER_BIT);
-        int x, y;
-        glfwGetWindowSize(window, &x, &y);
-        glViewport(0, 0, x, y);
         GLCall(glBindTexture(GL_TEXTURE_2D, imageTexture));
         GLCall(glBindBuffer(GL_ARRAY_BUFFER, VBO));
         GLCall(glBindVertexArray(VAO));
