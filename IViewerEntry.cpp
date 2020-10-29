@@ -13,7 +13,7 @@
 #ifdef _WIN32
 #include <stb_image.h>
 #elif __linux__
-#include <stb/stb_image.h>
+//#include <stb/stb_image.h>
 #endif
 
 #include <fstream>

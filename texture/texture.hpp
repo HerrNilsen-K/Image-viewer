@@ -1,6 +1,14 @@
 #ifndef __TEXTURE_HPP__
 #define __TEXTURE_HPP__
 
+#define STB_IMAGE_STATIC
+#define STB_IMAGE_IMPLEMENTATION
+#ifdef _WIN32
+#include <stb_image.h>
+#elif __linux__
+#include <stb/stb_image.h>
+#endif
+
 #include <string>
 
 namespace IViewer
@@ -16,8 +24,8 @@ namespace IViewer
         Texture(const char *c_filePath);
         ~Texture();
 
-        int getWidth() const { return this->m_width; }
-        int getHeight() const { return this->m_height; }
+        int getWidth() const;
+        int getHeight() const;
     };
 } // namespace IViewer
 

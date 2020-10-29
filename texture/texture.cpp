@@ -1,11 +1,4 @@
 #include "texture.hpp"
-#define STB_IMAGE_IMPLEMENTATION
-#ifdef _WIN32
-#include <stb_image.h>
-#elif __linux__
-#include <stb/stb_image.h>
-#endif
-
 #include <iostream>
 
 namespace IViewer
@@ -30,5 +23,8 @@ namespace IViewer
     Texture::~Texture()
     {
     }
+
+    int Texture::getWidth() const { return this->m_width; }
+    int Texture::getHeight() const { return this->m_height; }
 
 } // namespace IViewer
