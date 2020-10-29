@@ -1,7 +1,14 @@
+#include "checks/argChecker.hpp"
+#include "texture/texture.hpp"
+#include "checks/fileChecker.hpp"
+#include "util.hpp"
+
 #include <iostream>
 #include <string>
+
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
+
 #define STB_IMAGE_IMPLEMENTATION
 #ifdef _WIN32
 #include <stb_image.h>
@@ -11,66 +18,22 @@
 
 #include <fstream>
 
-void GLClearError()
-{
-    while (glGetError() != GL_NO_ERROR)
-        ;
-}
-
-bool GLLogCall(const char *function, const char *file, int line)
-{
-    if (GLenum error = glGetError())
-    {
-        std::cout << "[OpenGL Error] (" << error << "): " << function << std::endl
-                  << file << ": " << line << std::endl;
-        return false;
-    }
-    return true;
-}
-
-#define ASSERT(x) if (!(x))
-#define GLCall(x)   \
-    GLClearError(); \
-    x;              \
-    ASSERT(GLLogCall(#x, __FILE__, __LINE__))
-
-bool filExists(const char *p_file)
-{
-    std::ifstream inputFile;
-    inputFile.open(p_file, std::ifstream::in);
-    return inputFile.fail() ? false : true;
-}
-
 int main(int argc, char const **argv)
 {
     //Check if an image was passed to the program
-    try
-    {
-        if (argc != 2)
-        {
-            if (argc == 1)
-            {
-                throw std::string("Error: No input\n");
-            }
-            else
-            {
-                throw std::string("Error: Too many inputs\n");
-            }
-        }
-    }
-    catch (std::string e)
-    {
-        std::cout << e;
+    if (IViewer::checkArgs(argc, 1, true))
         return EXIT_FAILURE;
-    }
 
-    if (!filExists(argv[1]))
+    //Check if file exists
+    if (!IViewer::filExists(argv[1]))
     {
         std::cout << "File does not exist or cannot be open\n";
         return EXIT_FAILURE;
     }
 
     //Get image data and meta data
+    IViewer::Texture tex(argv[0]);
+    
     int width, height, nrChannels;
     stbi_set_flip_vertically_on_load(1);
     unsigned char *imageData = stbi_load(argv[1], &width, &height, &nrChannels, 0);
