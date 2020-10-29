@@ -1,7 +1,14 @@
+#include "checks/argChecker.hpp"
+#include "texture/texture.hpp"
+#include "checks/fileChecker.hpp"
+#include "util.hpp"
+
 #include <iostream>
-#include <sstream>
+#include <string>
+
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
+
 #define STB_IMAGE_IMPLEMENTATION
 #ifdef _WIN32
 #include <stb_image.h>
@@ -11,60 +18,22 @@
 
 #include <fstream>
 
-void GLClearError()
-{
-    while (glGetError() != GL_NO_ERROR)
-        ;
-}
-
-bool GLLogCall(const char *function, const char *file, int line)
-{
-    if (GLenum error = glGetError())
-    {
-        std::stringstream decError;
-        decError << std::hex << error; // int decimal_value
-        std::cout << "[OpenGL Error] (" << decError.str() << "): " << function << std::endl
-                  << file << ": " << line << std::endl;
-        return false;
-    }
-    return true;
-}
-
-#define ASSERT(x) if (!(x))
-#define GLCall(x)   \
-    GLClearError(); \
-    x;              \
-    ASSERT(GLLogCall(#x, __FILE__, __LINE__))
-
-bool filExists(const char *p_file)
-{
-    std::ifstream inputFile;
-    inputFile.open(p_file, std::ifstream::in);
-    return inputFile.fail() ? false : true;
-}
-
 int main(int argc, char const **argv)
 {
-    if (argc != 2)
-    {
-        if (argc == 1)
-        {
-            std::cout << "Error: No input\n";
-            return EXIT_FAILURE;
-        }
-        else
-        {
-            std::cout << "Error: Too many inputs\n";
-            return EXIT_FAILURE;
-        }
-    }
+    //Check if an image was passed to the program
+    if (IViewer::checkArgs(argc, 1, true))
+        return EXIT_FAILURE;
 
-    if (!filExists(argv[1]))
+    //Check if file exists
+    if (!IViewer::filExists(argv[1]))
     {
         std::cout << "File does not exist or cannot be open\n";
         return EXIT_FAILURE;
     }
 
+    //Get image data and meta data
+    IViewer::Texture tex(argv[0]);
+    
     int width, height, nrChannels;
     stbi_set_flip_vertically_on_load(1);
     unsigned char *imageData = stbi_load(argv[1], &width, &height, &nrChannels, 0);
@@ -98,12 +67,14 @@ int main(int argc, char const **argv)
         -1, -1, 0, 0, 0 //3
     };
 
+    //VBO
     unsigned int VBO;
     GLCall(glGenBuffers(1, &VBO));
 
     GLCall(glBindBuffer(GL_ARRAY_BUFFER, VBO));
     GLCall(glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW));
 
+    //VAO
     unsigned int VAO;
     GLCall(glGenVertexArrays(1, &VAO));
     GLCall(glBindVertexArray(VAO));
@@ -114,6 +85,7 @@ int main(int argc, char const **argv)
     GLCall(glVertexAttribPointer(1, 2, GL_FLOAT, 0, 5 * sizeof(float), (void *)(3 * sizeof(float))));
     GLCall(glEnableVertexAttribArray(1));
 
+    //Texture
     unsigned int imageTexture;
     GLCall(glGenTextures(1, &imageTexture));
 
@@ -156,6 +128,7 @@ int main(int argc, char const **argv)
         "    FragColor = texture(ourTexture, texCoord);\n"
         "} \n";
 
+    //Shader
     unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER), fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
     GLCall(glShaderSource(vertexShader, 1, &vertexShaderSource, NULL));
     GLCall(glCompileShader(vertexShader));
@@ -179,6 +152,7 @@ int main(int argc, char const **argv)
                   << infoLog << std::endl;
     }
 
+    //Shader program
     unsigned int shaderProgram;
     shaderProgram = glCreateProgram();
     GLCall(glAttachShader(shaderProgram, vertexShader));
@@ -193,24 +167,23 @@ int main(int argc, char const **argv)
                   << infoLog << std::endl;
     }
 
+    //Set the framebuffer callback, for drawing while resizing
     glfwSetFramebufferSizeCallback(window, [](GLFWwindow *win, int x, int y) {
         GLCall(glViewport(0, 0, x, y));
         GLCall(glDrawArrays(GL_TRIANGLES, 0, 6));
         glfwSwapBuffers(win);
     });
-
+    //Set the key callback, to process keyboard input
     glfwSetKeyCallback(window, [](GLFWwindow *win, int key, int scancode, int action, int mods) {
         if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
             glfwSetWindowShouldClose(win, true);
         glfwPollEvents();
     });
 
+    //Render loop
     while (!glfwWindowShouldClose(window))
     {
         glClear(GL_COLOR_BUFFER_BIT);
-        int x, y;
-        glfwGetWindowSize(window, &x, &y);
-        glViewport(0, 0, x, y);
         GLCall(glBindTexture(GL_TEXTURE_2D, imageTexture));
         GLCall(glBindBuffer(GL_ARRAY_BUFFER, VBO));
         GLCall(glBindVertexArray(VAO));
