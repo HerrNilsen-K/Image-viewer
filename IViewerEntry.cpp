@@ -1,4 +1,5 @@
 #include <iostream>
+#include <sstream>
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #define STB_IMAGE_IMPLEMENTATION
@@ -20,7 +21,9 @@ bool GLLogCall(const char *function, const char *file, int line)
 {
     if (GLenum error = glGetError())
     {
-        std::cout << "[OpenGL Error] (" << error << "): " << function << std::endl
+        std::stringstream decError;
+        decError << std::hex << error; // int decimal_value
+        std::cout << "[OpenGL Error] (" << decError.str() << "): " << function << std::endl
                   << file << ": " << line << std::endl;
         return false;
     }
